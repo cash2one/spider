@@ -38,10 +38,19 @@ class Handler(BaseHandler):
         url_info = urlparse.urlparse(response.url)
         url_query = url_info.query
         queries = urlparse.parse_qs(url_query)
+        self.has_upper_list = False
+        kinds_count = len(response.doc('#J_Tree > li'))
+        for each in response.doc('#J_Tree > li > a[href^="https://list.tmall.com/search_product.htm"]').items():
+            self.crawl(each.attr['href'], callback=self.list_page)
+            self.has_upper_list = True
 
-        if not queries.has_key('s'):
-            for i in range(1, int(page_len)):
-                self.crawl("%s&s=%r" %(response.url,i*40), callback=self.list_page)
+        #如果没有上级分类 ; 或则当前类别下商品已经超过50页。则翻页
+        print "%s %s" %(self.has_upper_list,page_len)
+        if (not self.has_upper_list) or (int(page_len) > 30):
+            if not queries.has_key('s'):
+                for i in range(1, int(page_len)):
+                    self.crawl("%s&s=%r" %(response.url,i*40), callback=self.list_page)
+
 
         return self.resproc.process(response, self)
 
